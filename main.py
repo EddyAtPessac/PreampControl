@@ -6,8 +6,8 @@ from machine import Pin, SoftI2C
 from ssd1306 import SSD1306_I2C
 from time import sleep
 from ledDrive import *
-from encoder import *
-from cEncoder import *
+from Encoder import *
+from LogicPotentiometer import *
 from ir_rx import IR_RX
 
 from ir_rx.nec import NEC_8, NEC_16
@@ -34,10 +34,8 @@ def IR_Callback(data, addr, ctrl):
         pBt.level -= 2
 
 
-test(1)
+# test(0)
 
-
-ir = NEC_16(Pin(39, Pin.IN), IR_Callback)
 
 
 i2c = SoftI2C(scl=Pin(15), sda=Pin(4))
@@ -66,10 +64,24 @@ print("\nStarting...")
 nbLedRing = 20
 ring = neopixel.NeoPixel(machine.Pin(22), nbLedRing)
 
-pBt = cEncoder()
+
+rotate_button = Encoder(36, 37, 38)
+pot_Vol = LogicPotentiometer(rotate_button, name="Vol")
+pot_Bal = LogicPotentiometer(rotate_button, name="Bal")
+pot_Bss = LogicPotentiometer(rotate_button, name="Bas")
+pot_Tre = LogicPotentiometer(rotate_button, name="Tre")
+
+# Link ir reception with the LogicPententiometer class callback
+ir = NEC_16(Pin(39, Pin.IN), LogicPotentiometer.ir_callback)
+
+pot_Vol.attach_IR_Code(0x99,0x9a)
+
+while True:
+    sleep(0.5)
+
 
 # global encoderChange
-lvl = [22,22,22,22,22]
+""" lvl = [22,22,22,22,22]
 lvl[1] = 20
 lvl[4] = 22
 lvl[2] = 22
@@ -91,3 +103,4 @@ while True:
         print ("Count: {} PushSel: {}".format(pBt.level, pBt.pushSel))
         pBt.encoderChange = pBt.ENCODER_NONE
     sleep(0.2)
+ """
