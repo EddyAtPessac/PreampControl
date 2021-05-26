@@ -5,24 +5,55 @@
 
 from Encoder import *
 
+#  Define a decorator to create static variables
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+
+
 class LogicPotentiometer():
 
     _nb_instance = 0
     _instances_datas = list()
+    _IR_repeat = (0,0)
 
     @classmethod
+    @static_vars(_ir_repeat=0)
+    @static_vars(_last_cbk=-1)
     def ir_callback(cls, data, addr, ctrl):
+        IR_REPEAT_TRIG1 = 10
+        INC_TRIG_1 = 5
         print("search for {:02X}".format(data))
+        increment = 1
+        if data < 0 :  # Is a repeat code ?
+            if cls._IR_repeat_nb > IR_REPEAT_TRIG1:
+                if increment == 1:
+                    print("increment up")
+            increment = INC_TRIG_1
+
+            ir_callback._ir_repeat += 1      # count how many repeat receved
+            ir_callback._last_cbk(increment)  # send to the last callback the new increment
+        else:
+            ir_callback._ir_repeat = 0       # End of repeat. Reset the counter 
+            print("increment raz")
+
         for instance_cbk, up, down in cls._instances_datas:
             if data == up:
-                instance_cbk(+1)
+                instance_cbk(+increment)
+                ir_callback._last_cbk = instance_cbk
             if data == down:
-                instance_cbk(-1)
+                instance_cbk(-increment)
+                ir_callback._last_cbk = instance_cbk
 
     @classmethod
     def register_instance(cls, instance_cbk, ir_up, ir_down):
         # Append callback of the instance and the corresponding ir code 
-        cls._instances_datas.append(instance_cbk, ir_up, ir_down) 
+        ir_tuple = instance_cbk, ir_up, ir_down
+        cls._instances_datas.append(ir_tuple) 
 
     def __init__(self, encoder, initial_level = 125, max_level = 255, name=""):
         global _nb_instance

@@ -27,11 +27,10 @@ def IR_Callback(data, addr, ctrl):
         print('Repeat code.')
     else:
         print('Data {:02x} Addr {:04x}'.format(data, addr))
-        pBt.encoderChange = pBt.ENCODER_PUSH
     if data == 0x99:
-        pBt.level += 2
+        pass
     if data == 0x9a:
-        pBt.level -= 2
+        pass
 
 
 # test(0)
@@ -73,8 +72,9 @@ pot_Tre = LogicPotentiometer(rotate_button, name="Tre")
 
 # Link ir reception with the LogicPententiometer class callback
 ir = NEC_16(Pin(39, Pin.IN), LogicPotentiometer.ir_callback)
-
-pot_Vol.attach_IR_Code(0x99,0x9a)
+#ir = NEC_16(Pin(39, Pin.IN), IR_Callback)
+pot_Vol.attach_IR_Code(0x10,0x14)
+pot_Bal.attach_IR_Code(0x11,0x16)
 
 while True:
     sleep(0.5)
