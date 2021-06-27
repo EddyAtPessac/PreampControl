@@ -75,7 +75,8 @@ ir = NEC_16(Pin(39, Pin.IN), LogicPotentiometer.ir_callback)
 #ir = NEC_16(Pin(39, Pin.IN), IR_Callback)
 pot_Vol.attach_IR_Code(0x10,0x14)
 pot_Bal.attach_IR_Code(0x11,0x16)
-
+pot_Bss.attach_IR_Code(0x08,0x0C)
+pot_Tre.attach_IR_Code(0x0A,0x0E)
 while True:
     sleep(0.5)
 
