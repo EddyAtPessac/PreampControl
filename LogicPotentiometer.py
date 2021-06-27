@@ -9,6 +9,7 @@ from Encoder import *
 def static_vars(**kwargs):
     def decorate(func):
         for k in kwargs:
+            print("Decorate add attr {} = {} to function  {}".format(k, kwargs[k], func))
             setattr(func, k, kwargs[k])
         return func
     return decorate
@@ -19,11 +20,12 @@ class LogicPotentiometer():
 
     _nb_instance = 0
     _instances_datas = list()
-    _IR_repeat = (0,0)
+    _IR_repeat_nb = 0
+    _last_Cbk = None
 
     @classmethod
-    @static_vars(_ir_repeat=0)
-    @static_vars(_last_cbk=-1)
+    #@static_vars(_ir_repeat=0)
+    #@static_vars(_last_cbk=-1)
     def ir_callback(cls, data, addr, ctrl):
         IR_REPEAT_TRIG1 = 10
         INC_TRIG_1 = 5
@@ -35,19 +37,21 @@ class LogicPotentiometer():
                     print("increment up")
             increment = INC_TRIG_1
 
-            ir_callback._ir_repeat += 1      # count how many repeat receved
-            ir_callback._last_cbk(increment)  # send to the last callback the new increment
+             cls._IR_repeat_nb += 1      # count how many repeat receved
+             cls._last_Cbk(increment)  # send to the last callback the new increment
         else:
-            ir_callback._ir_repeat = 0       # End of repeat. Reset the counter 
+            cls._IR_repeat_nb = 0       # End of repeat. Reset the counter 
+            cls.increment = 0
             print("increment raz")
 
         for instance_cbk, up, down in cls._instances_datas:
             if data == up:
-                instance_cbk(+increment)
-                ir_callback._last_cbk = instance_cbk
+                instance_cbk(+
+                )
+                cls._last_Cbk = instance_cbk
             if data == down:
                 instance_cbk(-increment)
-                ir_callback._last_cbk = instance_cbk
+                cls._last_Cbk = instance_cbk
 
     @classmethod
     def register_instance(cls, instance_cbk, ir_up, ir_down):
@@ -56,7 +60,7 @@ class LogicPotentiometer():
         cls._instances_datas.append(ir_tuple) 
 
     def __init__(self, encoder, initial_level = 125, max_level = 255, name=""):
-        global _nb_instance
+        #global _nb_instance
         self.__class__._nb_instance += 1
         self.pot_pos = self._nb_instance
         self.pot_name = str(self.pot_pos) if name == "" else name
