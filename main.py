@@ -60,8 +60,8 @@ led = Pin(25, Pin.OUT)
 # initPinEncoder()
 print("\nStarting...")
 
-nbLedRing = 20
-ring = neopixel.NeoPixel(machine.Pin(22), nbLedRing)
+nb_led_ring = 20
+ring = neopixel.NeoPixel(machine.Pin(22), nb_led_ring)
 
 
 rotate_button = Encoder(36, 37, 38)
@@ -73,10 +73,15 @@ pot_Tre = LogicPotentiometer(rotate_button, name="Tre")
 # Link ir reception with the LogicPententiometer class callback
 ir = NEC_16(Pin(39, Pin.IN), LogicPotentiometer.ir_callback)
 #ir = NEC_16(Pin(39, Pin.IN), IR_Callback)
-pot_Vol.attach_IR_Code(0x10,0x14)
-pot_Bal.attach_IR_Code(0x11,0x16)
-pot_Bss.attach_IR_Code(0x08,0x0C)
-pot_Tre.attach_IR_Code(0x0A,0x0E)
+pot_Vol.attach_IR_Code(0x10, 0x14)
+pot_Bal.attach_IR_Code(0x11, 0x16)
+pot_Bss.attach_IR_Code(0x08, 0x0C)
+pot_Tre.attach_IR_Code(0x0A, 0x0E)
+
+pot_Vol.attattachRingMode(RING_MODE_ONE_POINT, LED_COLOR_RED)
+
+pot_list = (pot_Vol, pot_Bal, pot_Bss, pot_Tre)
+
 while True:
     sleep(0.5)
 
