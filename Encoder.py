@@ -1,7 +1,7 @@
 from machine import Pin
 from time import ticks_ms
 from utime import ticks_us
-
+from LogicPotentiometer import LogicPotentiometer # To get base_increment
 
 class Encoder():
     """ Gestion d'un encodeur rotatif """
@@ -33,6 +33,7 @@ class Encoder():
         self.pin_A = pin_A
         self.pin_B = pin_B
         self.pin_BP = pin_BP
+        self.base_increment = LogicPotentiometer.base_increment
         self.pushSel = 0
         self.encoderChange = self.ENCODER_NONE
         self.lastAState = 0
@@ -49,7 +50,7 @@ class Encoder():
     def register_callback(self, callback):
         # self.cli_count += 1 
         self.cli_callback.append(callback) 
-        print("register {} list: '{}'".format(callback, self.cli_callback))
+        print("register {} adress {}  list len: '{}'".format(callback.__name__, hex(id(callback)), len(self.cli_callback)))
 
     #Interrupt handler for all Pins
     def interruptHdl(self, pin):
@@ -76,17 +77,18 @@ class Encoder():
         self.encoderChange = self.ENCODER_PUSH
 
 
+
     def manageEncoderRotation(self):
-        inc = 1
+        inc = self.base_increment
         
         # Check time between to 2 interuption 
         dtime = ticks_ms() - self.rotTime
         if dtime < self.deboundTime:
             return
         if dtime < self.speedFast_1:
-            inc = 10
+            inc = 10 * self.base_increment
         elif dtime < self.speedFast_2:
-            inc = 5
+            inc = 5 * self.base_increment
 
         bState =  self.inB.value()
         aState =  self.inA.value()
@@ -100,11 +102,12 @@ class Encoder():
         self.rotTime = ticks_ms()
         self.lastAState = aState
         if (len(self.cli_callback) > 0):
-            self.cli_callback[self.pushSel](inc, self.encoderChange)
+            # self.cli_callback[self.pushSel](inc, self.encoderChange)
+            self.cli_callback[self.pushSel](inc)
         
     """
     Ancienne tentative pour faire un heritage. Au final, on laisse tomber, c'est a l'utilisateur
-    de créer un objet par encodeur, et d'utiliser cet objet pour la gestion des Potentiometer
+    de créer l'objet encodeur, et d'utiliser cet objet pour la gestion des Potentiometer
  
     _Pin_A_dict = {} 
     _Callback_list =[]

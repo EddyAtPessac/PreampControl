@@ -64,7 +64,7 @@ nb_led_ring = 20
 ring = neopixel.NeoPixel(machine.Pin(22), nb_led_ring)
 
 
-rotate_button = Encoder(36, 37, 38)
+rotate_button = Encoder(36, 37, 38, POT_PHYSIQUE_MAX_LEVEL)
 pot_Vol = LogicPotentiometer(rotate_button, name="Vol")
 pot_Bal = LogicPotentiometer(rotate_button, name="Bal")
 pot_Bss = LogicPotentiometer(rotate_button, name="Bas")
@@ -78,7 +78,7 @@ pot_Bal.attach_IR_Code(0x11, 0x16)
 pot_Bss.attach_IR_Code(0x08, 0x0C)
 pot_Tre.attach_IR_Code(0x0A, 0x0E)
 
-pot_Vol.attattachRingMode(RING_MODE_ONE_POINT, LED_COLOR_RED)
+pot_Vol.attachRingMode(RING_MODE_ONE_POINT, LED_COLOR_RED)
 
 pot_list = (pot_Vol, pot_Bal, pot_Bss, pot_Tre)
 
