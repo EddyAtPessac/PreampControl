@@ -6,6 +6,7 @@
 #from _typeshed import Self
 from Encoder import *
 from ledDrive import *
+from machine import Pin, Timer
 
 """
 Class LogicPotentiometer: This class manage potentiometer object. Each object have a 
@@ -26,9 +27,12 @@ class LogicPotentiometer():
     _instances_IR_datas = list() # List of tuple (callback, up_code, down_code)
     _IR_repeat_nb = 0
     _last_Cbk = None
+    _default_change_level_callbak = None # This is used to select the default potentiometer 
     _direction = 0
     _increment = base_increment
     _fast_increment = _increment * 5
+    _timer = Timer(0)
+
 
     def __init__(self, encoder, initial_level = 0.5, name=""):
         #global _nb_instance
@@ -41,6 +45,32 @@ class LogicPotentiometer():
         encoder.register_callback(self.change_level)
         print("create potentiometer instance:{} initial_level:{} name:{}".format(
                 self._nb_instance, initial_level, name))
+        # We note the change_level callback of the default potentiometer
+        if LogicPotentiometer._nb_instance == 1:    # When the 1st Potentiometer is defined, select it
+            LogicPotentiometer._default_change_level_callbak = self.change_level
+            LogicPotentiometer.return_to_default_selection(None)    # None replace the timer object
+
+    @classmethod
+    def reinit_timer(cls, _time=5000):  
+        # Reload timer 
+        cls._timer.init(period=_time, mode=Timer.ONE_SHOT, callback=cls.return_to_default_selection)
+
+    @classmethod
+    def return_to_default_selection(cls, timer_object):
+        """ This function return the default selected potentiometer to the 1st.
+        It is used to display Volume after a time without Encoder action, 
+        or, at the initialisation when the 1st potentiometer is defined 
+        The timer_object argument is provided when the timer call this function
+        """
+        if cls._default_change_level_callbak is not None:
+            cls._default_change_level_callbak(0)
+
+
+    @classmethod
+    def register_instance(cls, instance_cbk, ir_up, ir_down):
+        """ Append callback of the instance and the corresponding ir code """
+        ir_tuple = instance_cbk, ir_up, ir_down
+        cls._instances_IR_datas.append(ir_tuple) 
 
 
     @classmethod
@@ -78,13 +108,6 @@ class LogicPotentiometer():
                     cls._last_Cbk = instance_cbk
 
 
-
-    @classmethod
-    def register_instance(cls, instance_cbk, ir_up, ir_down):
-        """ Append callback of the instance and the corresponding ir code """
-        ir_tuple = instance_cbk, ir_up, ir_down
-        cls._instances_IR_datas.append(ir_tuple) 
-
     def attach_IR_Code(self, up, down):
         """ Add up/down code and link them to this instance """
         LogicPotentiometer.register_instance( self.instance_ir_callback, up, down)
@@ -104,13 +127,18 @@ class LogicPotentiometer():
         self.color = color
         self.ring_mode = mode
 
+
     def change_level(self, increment):
         """ Add increment to potentiometer and check the bounds of level 
         set this instance of potentiometer as the selected one
+        update led ring with the color of the selected potentiometer
         """
-        # print( "Rotation of {} for pot {} ".format(increment, sel_pot))
+        print( "Rotation of {} for pot {} ".format(increment, self.pot_pos))
         #  Set the selected potentiometer to this instance
         LogicPotentiometer._sel_instance = self.pot_pos
+        if self.pot_pos != 1:   # We return to pot 1 with a delay
+            LogicPotentiometer.reinit_timer()   # Restart default selection timer
+
         self.level += increment
         if self.level > 1.0:
             self.level = 1.0
@@ -121,17 +149,19 @@ class LogicPotentiometer():
     def update_level(self):
         print("Pot '{:1d}' level:{:0.03f} ({})".format(self.pot_pos, self.level, self.pot_name))
         setRing(self.level, self.ring_mode, self.color )
-    
-    def is_selected(cls, self):
-        """ return True if this instance of potentiometer is selected """
-        return cls._sel_instance == self.self.pot_pos
 
 # ----------UNUSED---------------
+
+#    def is_selected(cls, self):
+#        """ return True if this instance of potentiometer is selected """
+#        return cls._sel_instance == self.self.pot_pos
+
 def static_vars(**kwargs):
     """ Define a decorator to create static variables
     It look them that it doesnt works with class method
     """
     def decorate(func):
+
         print("Decorate of {}".format(func))
         for k in kwargs:
             print("Decorate add attr {} = {} to function  {}".format(k, kwargs[k], func))

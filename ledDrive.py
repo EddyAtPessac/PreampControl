@@ -28,10 +28,11 @@ RING_MODE_BALANCE = 3     # Display 2 level: one bar from 0 to 128 the otherbar 
 # Ring colors
 LED_COLOR_RED = (255, 0, 0)
 LED_COLOR_BLACK = (0,0,0)
-
+LED_COLOR_BLUE =(0,0,255)
+LED_COLOR_GREEN = (0,255,0)
 nb_led_ring = 24  # Not used, for information
 # The content of the last display. Used to check if there is a change on the ring
-last_ring = ['Empty']    # The empty text assume that the 1st compare is False
+last_ring = None    # The empty text assume that the 1st compare is False
 ring = neopixel.NeoPixel(machine.Pin(22), nb_led_ring)
 
 
@@ -50,15 +51,19 @@ def isRingChange(new_ring):
   obtenu entre eux pour produire un seul resultat
   """
   global last_ring  # Do not create a local attribute, affect the global 
-  # Compare 2 a 2 chaque tuple et renvoie une liste avec False/True pour chaque comparaison  
-  compare_list = list(map (lambda tuple1, tuple2 :  
-                      tuple1 == tuple2, last_ring, new_ring))
-  if reduce(lambda a, b : a and b,    # Applique un AND entre chaque element de la liste 
-              compare_list, True):    # Si tout les AND entre éléments aboutissent à True
-    return False    # No change return False and do nothing else
-  
+  try:  # At the initialisation last_ring is None an provoque a TypeError exeption
+    # Compare 2 a 2 chaque tuple et renvoie une liste avec False/True pour chaque comparaison  
+    compare_list = list(map (lambda tuple1, tuple2 :  
+                        tuple1 == tuple2, last_ring, new_ring))
+    #print(last_ring, new_ring, compare_list, sep='\n')
+    if reduce(lambda a, b : a and b,    # Applique un AND entre chaque element de la liste 
+                compare_list, True):    # Si tout les AND entre éléments aboutissent à True
+      return False    # No change return False and do nothing else
+  except TypeError:
+    pass
+
   # The string new_ring is changed: note the new value
-  last_ring = "{:s}".format(new_ring)  # Make a copy of the new string (do not copy it's reference)
+  last_ring = new_ring.copy()  # Make a copy of the new string (do not copy it's reference)
   # print ('Change', last_ring, new_ring, sep='\n')
   return True       # The ring is changed 
 
@@ -68,6 +73,7 @@ def setRingOnePointMode(level, color):
   in led ring with the requested color 
   """
   low_color = tuple (map(lambda c : c>>5 , color))  # Get lower britenest
+  new_ring = []
   led_display = "..[..................].."
   idx_min = led_display.find('[') + 1
   idx_max = led_display.find(']') 
@@ -83,9 +89,11 @@ def setRingOnePointMode(level, color):
   # Coping the logic display in the led ring
   idx = 0
   for c in led_display:
-    ring[idx] = LED_COLOR_BLACK if c=='.' else color if c=='*' else low_color
+    new_ring.append(LED_COLOR_BLACK if c=='.' else color if c=='*' else low_color)
+    # print(new_ring)
+    ring[idx] = new_ring[idx]   # Update the ring object with the Led color
     idx += 1
-  if isRingChange(led_display):
+  if isRingChange(new_ring):
     print(led_display)
     ring.write()
 

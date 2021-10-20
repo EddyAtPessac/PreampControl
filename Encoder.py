@@ -48,9 +48,11 @@ class Encoder():
 
 
     def register_callback(self, callback):
+        """ This function is called by the potentiometer to register this change_level() handler """
         # self.cli_count += 1 
         self.cli_callback.append(callback) 
         print("register {} adress {}  list len: '{}'".format(callback.__name__, hex(id(callback)), len(self.cli_callback)))
+
 
     #Interrupt handler for all Pins
     def interruptHdl(self, pin):
@@ -75,6 +77,9 @@ class Encoder():
         print( "PushSel:{}".format(self.pushSel))
         self.pushTime = ticks_ms() + self.pushWait # Do not accept next push until wait time
         self.encoderChange = self.ENCODER_PUSH
+        if (len(self.cli_callback) > 0):    # If at least onr potentiometer is registered 
+            print("Call callback {}".format(self.pushSel))
+            self.cli_callback[self.pushSel](0)  # Call  LogicPotentiometer.changeLevel()
 
 
 
@@ -101,9 +106,8 @@ class Encoder():
         # print("time: {}, Increment:{}".format(dtime, inc))
         self.rotTime = ticks_ms()
         self.lastAState = aState
-        if (len(self.cli_callback) > 0):
-            # self.cli_callback[self.pushSel](inc, self.encoderChange)
-            self.cli_callback[self.pushSel](inc)
+        if (len(self.cli_callback) > 0):    # If at least onr potentiometer is registered 
+            self.cli_callback[self.pushSel](inc)  # Call  LogicPotentiometer.changeLevel()
         
     """
     Ancienne tentative pour faire un heritage. Au final, on laisse tomber, c'est a l'utilisateur
