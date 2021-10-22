@@ -1,5 +1,6 @@
 import machine, neopixel
 from math import *
+from PinsDefinition import *
 #from functools import *
 
 """ Neopixel library: 
@@ -33,7 +34,8 @@ LED_COLOR_GREEN = (0,255,0)
 nb_led_ring = 24  # Not used, for information
 # The content of the last display. Used to check if there is a change on the ring
 last_ring = None    # The empty text assume that the 1st compare is False
-ring = neopixel.NeoPixel(machine.Pin(22), nb_led_ring)
+#ring = neopixel.NeoPixel(machine.Pin(22), nb_led_ring)
+ring = neopixel.NeoPixel(machine.Pin(PIN_NEOLED_OUT), nb_led_ring)
 
 
 lum = 1

@@ -6,11 +6,12 @@ from LogicPotentiometer import LogicPotentiometer # To get base_increment
 class Encoder():
     """ Gestion d'un encodeur rotatif """
 
-    # Constants used
+    # Constants used in ms
     pushWait = 0
-    deboundTime = 2
-    speedFast_1 = 5
-    speedFast_2 = 20
+    push_debound_time = 2
+    long_push = 50
+    speedFast_1 = 10
+    speedFast_2 = 40
 
     # Class variables: these variables depend from only one hard equipment
     pushTime = 0  # Measure from the last event of the push buton
@@ -30,28 +31,28 @@ class Encoder():
 
     def __init__(self, pin_A = DEFAULT_PINA, pin_B = DEFAULT_PINB, pin_BP = DEFAULT_PINBP):
         print("Create Encoder {}  pin_A: {}, pin_BP: {}".format(self, pin_A, pin_BP))
+        #self.pushSel = 0    # Decide which potentiometer is selected, and then, called to update_level()
+        #self.cli_count = 0   # Number of registered client
+        #self.cli_callback = []  # Callback for each client
+        self.base_increment = LogicPotentiometer.base_increment
         self.pin_A = pin_A
         self.pin_B = pin_B
         self.pin_BP = pin_BP
-        self.base_increment = LogicPotentiometer.base_increment
-        self.pushSel = 0
         self.encoderChange = self.ENCODER_NONE
         self.lastAState = 0
-        self.inA = Pin(pin_A, Pin.IN)
-        self.inB = Pin(pin_B, Pin.IN)
-        self.inBp = Pin(pin_BP, Pin.IN)
+        self.inA = Pin(pin_A, Pin.IN, Pin.PULL_UP)
+        self.inB = Pin(pin_B, Pin.IN, Pin.PULL_UP)
+        self.inBp = Pin(pin_BP, Pin.IN, Pin.PULL_UP)
         self.pushTime =  ticks_ms()
         self.inA.irq(trigger = Pin.IRQ_RISING | Pin.IRQ_FALLING, handler = self.interruptHdl)
         self.inBp.irq(trigger =  Pin.IRQ_FALLING, handler = self.interruptHdl)
-        self.cli_count = 0   # Number of registered client
-        self.cli_callback = []  # Callback for each client
 
 
     def register_callback(self, callback):
         """ This function is called by the potentiometer to register this change_level() handler """
-        # self.cli_count += 1 
-        self.cli_callback.append(callback) 
-        print("register {} adress {}  list len: '{}'".format(callback.__name__, hex(id(callback)), len(self.cli_callback)))
+        pass
+        #self.cli_callback.append(callback) 
+        #print("register {} adress {}  list len: '{}'".format(callback.__name__, hex(id(callback)), len(self.cli_callback)))
 
 
     #Interrupt handler for all Pins
@@ -68,32 +69,40 @@ class Encoder():
 
     def manageEncoderPush(self):
         dtime = ticks_ms() - self.pushTime
-        if dtime < self.deboundTime:
-            print ('to fast')
-            return
-        self.pushSel += 1
-        if self.pushSel >= len(self.cli_callback):
-            self.pushSel = 0
-        print( "PushSel:{}".format(self.pushSel))
         self.pushTime = ticks_ms() + self.pushWait # Do not accept next push until wait time
-        self.encoderChange = self.ENCODER_PUSH
-        if (len(self.cli_callback) > 0):    # If at least onr potentiometer is registered 
-            print("Call callback {}".format(self.pushSel))
-            self.cli_callback[self.pushSel](0)  # Call  LogicPotentiometer.changeLevel()
+        if dtime < self.push_debound_time:
+            print ('push rebound')
+            return
+        # if dtime > self.long_push:
+        #     print("long push")
+        #     return
+
+        LogicPotentiometer.select_next()    # Select the next one
+
+        #old design 
+        # self.pushSel += 1
+        # if self.pushSel >= len(self.cli_callback):
+        #     self.pushSel = 0
+        # print( "PushSel:{}".format(self.pushSel))
+        # # self.pushTime = ticks_ms() + self.pushWait # Do not accept next push until wait time
+        # self.encoderChange = self.ENCODER_PUSH
+        # if (len(self.cli_callback) > 0):    # If at least one potentiometer is registered 
+        #     print("Call callback changeLevel(0) {}".format(self.pushSel))
+        #     self.cli_callback[self.pushSel](0)  # Call  LogicPotentiometer.changeLevel()
 
 
 
     def manageEncoderRotation(self):
-        inc = self.base_increment
+        inc = 1
         
         # Check time between to 2 interuption 
         dtime = ticks_ms() - self.rotTime
-        if dtime < self.deboundTime:
+        if dtime < self.push_debound_time:
             return
         if dtime < self.speedFast_1:
-            inc = 10 * self.base_increment
+            inc = 10 
         elif dtime < self.speedFast_2:
-            inc = 5 * self.base_increment
+            inc = 5 
 
         bState =  self.inB.value()
         aState =  self.inA.value()
@@ -103,11 +112,13 @@ class Encoder():
             inc *= -1
         else:
             self.encoderChange = self.ENCODER_RIGHT
-        # print("time: {}, Increment:{}".format(dtime, inc))
+        print("time: {}, Increment:{}".format(dtime, inc))
+        inc *= self.base_increment
         self.rotTime = ticks_ms()
         self.lastAState = aState
-        if (len(self.cli_callback) > 0):    # If at least onr potentiometer is registered 
-            self.cli_callback[self.pushSel](inc)  # Call  LogicPotentiometer.changeLevel()
+        LogicPotentiometer.change_pot_level(inc)
+        #if (True and len(self.cli_callback) > 0):    # If at least one potentiometer is registered 
+        #    self.cli_callback[self.pushSel](inc)  # Call  LogicPotentiometer.changeLevel()
         
     """
     Ancienne tentative pour faire un heritage. Au final, on laisse tomber, c'est a l'utilisateur
